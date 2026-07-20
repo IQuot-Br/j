@@ -28,9 +28,9 @@ jobs:
       - name: Instalar dependências do Node
         run: npm install
 
-      # CORREÇÃO: Sincroniza e cria os arquivos do Cordova que o Gradle pediu
+      # CORREÇÃO: Usa o npm run para evitar o bloqueio de permissão do npx
       - name: Sincronizar projeto com o Capacitor
-        run: npx cap sync
+        run: npm run sync
 
       - name: Tornar o Gradle executável
         run: chmod +x gradlew
