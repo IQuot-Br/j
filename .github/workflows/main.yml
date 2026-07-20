@@ -28,7 +28,10 @@ jobs:
       - name: Instalar dependências do Node
         run: npm install
 
-      # CORREÇÃO: Usa o npm run para evitar o bloqueio de permissão do npx
+      # CORREÇÃO CRÍTICA: Destrava a permissão do Capacitor no Linux do GitHub
+      - name: Dar permissão ao executável do Capacitor
+        run: chmod +x node_modules/.bin/cap
+
       - name: Sincronizar projeto com o Capacitor
         run: npm run sync
 
