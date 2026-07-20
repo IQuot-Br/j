@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Painel Admin Localhost</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 0; padding: 20px; background: #0f172a; color: #f8fafc; }
+    .card { background: #111827; padding: 16px; border-radius: 12px; margin-bottom: 16px; }
+    input, button { width: 100%; padding: 10px; margin-top: 8px; border-radius: 8px; border: none; }
+    button { background: #2563eb; color: white; cursor: pointer; }
+  </style>
+</head>
+<body>
+  <h1>Painel Admin</h1>
+  <p>Este painel só funciona quando acessado via localhost.</p>
+  <div class="card">
+    <h2>Login do Admin</h2>
+    <input id="adminUser" placeholder="Username" />
+    <input id="adminPass" type="password" placeholder="Password" />
+    <button onclick="loginAdmin()">Entrar</button>
+  </div>
+  <div class="card" id="adminContent">
+    <p>Use o login de administrador para ver os dados.</p>
+  </div>
+  <script>
+    async function loginAdmin() {
+      const username = document.getElementById('adminUser').value;
+      const password = document.getElementById('adminPass').value;
+      const res = await fetch('/admin/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, password })
+      });
+      const data = await res.json();
+      if (!data.success) {
+        alert(data.error || 'Erro');
+        return;
+      }
+      const statsRes = await fetch('/api/admin');
+      const stats = await statsRes.json();
+      document.getElementById('adminContent').innerHTML = `
+        <h3>Bem-vindo, ${stats.adminUser}</h3>
+        <p>Usuários: ${stats.stats.totalUsers}</p>
+        <p>Threads: ${stats.stats.totalThreads}</p>
+        <p>Blogs: ${stats.stats.totalBlogs}</p>
+        <p>Dev Logs: ${stats.stats.totalDevLogs}</p>
+        <p>Notificações não lidas: ${stats.stats.unreadNotifications}</p>
+      `;
+    }
+  </script>
+</body>
+</html>

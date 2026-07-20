@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Nova Hub App</title>
+  <style>
+    :root { color-scheme: dark; }
+    * { box-sizing: border-box; }
+    body { font-family: Arial, sans-serif; margin: 0; padding: 16px; background: linear-gradient(135deg, #0f172a, #111827); color: #f8fafc; }
+    .app { max-width: 900px; margin: 0 auto; }
+    h1 { margin: 0 0 12px; font-size: 24px; }
+    .card { background: rgba(17,24,39,0.95); padding: 14px; border-radius: 14px; margin-bottom: 12px; border: 1px solid #334155; box-shadow: 0 6px 20px rgba(0,0,0,0.25); }
+    input, textarea, button { width: 100%; margin-top: 8px; padding: 10px; border-radius: 10px; border: none; font-size: 14px; }
+    textarea { min-height: 80px; resize: vertical; }
+    button { background: linear-gradient(90deg, #4f46e5, #2563eb); color: white; cursor: pointer; font-weight: 600; }
+    .pill { display: inline-block; padding: 4px 8px; background: #374151; border-radius: 999px; margin-right: 6px; margin-top: 6px; font-size: 12px; }
+    .muted { color: #94a3b8; font-size: 13px; }
+    a { color: #60a5fa; }
+    @media (max-width: 700px) {
+      body { padding: 12px; }
+      h1 { font-size: 20px; }
+      .card { padding: 12px; border-radius: 12px; }
+      input, textarea, button { font-size: 15px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+  <h1>Nova Hub App</h1>
+  <div class="card">
+    <h2>Register / Login</h2>
+    <a href="/admin-panel" style="display:inline-block; margin-bottom:10px; color:#60a5fa;">Abrir painel admin</a>
+    <input id="username" placeholder="Username" />
+    <input id="password" type="password" placeholder="Password" />
+    <button onclick="registerOrLogin()">Entrar / Registrar</button>
+    <button onclick="loginUser()">Login</button>
+  </div>
+
+  <div class="card">
+    <h2>Admin Panel</h2>
+    <p>Usuário admin: Wentik</p>
+    <button onclick="loadAdminStats()">Ver estatísticas</button>
+    <div id="adminStats"></div>
+  </div>
+
+  <div class="card">
+    <h2>Threads</h2>
+    <textarea id="threadContent" placeholder="Escreva seu thread..."></textarea>
+    <button onclick="postThread()">Postar thread</button>
+    <div id="threads"></div>
+  </div>
+
+  <div class="card">
+    <h2>Blog</h2>
+    <input id="blogTitle" placeholder="Título" />
+    <textarea id="blogContent" placeholder="Conteúdo do blog..."></textarea>
+    <button onclick="postBlog()">Publicar blog</button>
+    <div id="blogs"></div>
+  </div>
+
+  <div class="card">
+    <h2>Dev Log</h2>
+    <textarea id="devLog" placeholder="Registrar atualização..."></textarea>
+    <button onclick="postDevLog()">Salvar log</button>
+    <div id="devlogs"></div>
+  </div>
+
+  <div class="card">
+    <h2>Anúncios</h2>
+    <p>Somente Wentik pode criar ou remover anúncios.</p>
+    <input id="annTitle" placeholder="Título do anúncio" />
+    <textarea id="annContent" placeholder="Texto do anúncio"></textarea>
+    <input id="annUser" placeholder="Username do admin" />
+    <input id="annPass" type="password" placeholder="Senha do admin" />
+    <button onclick="createAnnouncement()">Criar anúncio</button>
+    <div id="announcements"></div>
+  </div>
+
+  <div class="card">
+    <h2>Notifications</h2>
+    <button onclick="requestNotificationPermission()">Ativar notificações</button>
+    <button onclick="markNotificationsRead()">Marcar todas como lidas</button>
+    <div id="notifications"></div>
+  </div>
+
+  </div>
+  <script>
+    async function registerOrLogin() {
+      const username = document.getElementById('username').value;
+      const password = document.getElementById('password').value;
+      const res = await fetch('/register', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ username, password }) });
+      const data = await res.json();
+      alert(data.success ? 'Conta criada' : data.error);
+      loadNotifications();
+    }
+
+    async function loginUser() {
+      const username = document.getElementById('username').value;
+      const password = document.getElementById('password').value;
+      const res = await fetch('/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ username, password }) });
+      const data = await res.json();
+      alert(data.success ? 'Login feito' : data.error);
+      loadNotifications();
+    }
+
+    async function postThread() {
+      const author = document.getElementById('username').value || 'anon';
+      const content = document.getElementById('threadContent').value;
+      const res = await fetch('/threads', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ author, content }) });
+      const data = await res.json();
+      if (data.success) loadThreads();
+    }
+
+    async function postBlog() {
+      const author = document.getElementById('username').value || 'anon';
+      const title = document.getElementById('blogTitle').value;
+      const content = document.getElementById('blogContent').value;
+      const res = await fetch('/blogs', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ title, content, author }) });
+      const data = await res.json();
+      if (data.success) loadBlogs();
+    }
+
+    async function postDevLog() {
+      const author = document.getElementById('username').value || 'anon';
+      const message = document.getElementById('devLog').value;
+      const res = await fetch('/devlogs', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ message, author }) });
+      const data = await res.json();
+      if (data.success) loadDevLogs();
+    }
+
+    async function loadThreads() {
+      const res = await fetch('/threads');
+      const data = await res.json();
+      document.getElementById('threads').innerHTML = data.map(t => `<div class="card"><strong>${t.author}</strong><p>${t.content}</p></div>`).join('');
+    }
+
+    async function loadBlogs() {
+      const res = await fetch('/blogs');
+      const data = await res.json();
+      document.getElementById('blogs').innerHTML = data.map(b => `<div class="card"><h3>${b.title}</h3><p>${b.content}</p><span class="pill">${b.author}</span></div>`).join('');
+    }
+
+    async function loadDevLogs() {
+      const res = await fetch('/devlogs');
+      const data = await res.json();
+      document.getElementById('devlogs').innerHTML = data.map(l => `<div class="card"><p>${l.message}</p><span class="pill">${l.author}</span></div>`).join('');
+    }
+
+    async function loadNotifications() {
+      const res = await fetch('/notifications');
+      const data = await res.json();
+      document.getElementById('notifications').innerHTML = data.map(n => `<div class="card">${n.message} <span class="pill">${n.read ? 'Lida' : 'Nova'}</span></div>`).join('');
+    }
+
+    async function createAnnouncement() {
+      const title = document.getElementById('annTitle').value;
+      const content = document.getElementById('annContent').value;
+      const username = document.getElementById('annUser').value;
+      const password = document.getElementById('annPass').value;
+      const res = await fetch('/announcements', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title, content, username, password })
+      });
+      const data = await res.json();
+      if (data.success) {
+        loadAnnouncements();
+        document.getElementById('annTitle').value = '';
+        document.getElementById('annContent').value = '';
+      } else {
+        alert(data.error || 'Erro');
+      }
+    }
+
+    async function deleteAnnouncement(id) {
+      const username = document.getElementById('annUser').value;
+      const password = document.getElementById('annPass').value;
+      const res = await fetch(`/announcements/${id}`, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, password })
+      });
+      const data = await res.json();
+      if (data.success) {
+        loadAnnouncements();
+      } else {
+        alert(data.error || 'Erro');
+      }
+    }
+
+    async function loadAnnouncements() {
+      const res = await fetch('/announcements');
+      const data = await res.json();
+      document.getElementById('announcements').innerHTML = data.map(item => `
+        <div class="card">
+          <strong>${item.title}</strong>
+          <p>${item.content}</p>
+          <span class="pill">${item.author}</span>
+          <button onclick="deleteAnnouncement(${item.id})">Excluir anúncio</button>
+        </div>
+      `).join('');
+    }
+
+    async function loadAdminStats() {
+      const res = await fetch('/api/admin');
+      const data = await res.json();
+      document.getElementById('adminStats').innerHTML = `<div class="card"><p>Usuários: ${data.stats.totalUsers}</p><p>Threads: ${data.stats.totalThreads}</p><p>Blogs: ${data.stats.totalBlogs}</p><p>Dev Logs: ${data.stats.totalDevLogs}</p><p>Notificações não lidas: ${data.stats.unreadNotifications}</p></div>`;
+    }
+
+    function requestNotificationPermission() {
+      if ('Notification' in window) {
+        Notification.requestPermission().then(() => {
+          if (Notification.permission === 'granted') {
+            new Notification('Nova Hub', { body: 'Notificações ativadas!' });
+          }
+        });
+      }
+    }
+
+    async function markNotificationsRead() {
+      const res = await fetch('/notifications/read', { method: 'POST' });
+      const data = await res.json();
+      if (data.success) loadNotifications();
+    }
+
+    loadThreads();
+    loadBlogs();
+    loadDevLogs();
+    loadNotifications();
+    loadAnnouncements();
+  </script>
+</body>
+</html>
