@@ -19,16 +19,15 @@ jobs:
         with:
           node-version: '22'
 
-      - name: Configurar JDK 17
+      - name: Configurar JDK 21
         uses: actions/setup-java@v4
         with:
           distribution: 'zulu'
-          java-version: '17'
+          java-version: '21' # <-- ATUALIZADO DE 17 PARA 21
 
       - name: Instalar dependências do Node
         run: npm install
 
-      # CORREÇÃO CRÍTICA: Destrava a permissão do Capacitor no Linux do GitHub
       - name: Dar permissão ao executável do Capacitor
         run: chmod +x node_modules/.bin/cap
 
